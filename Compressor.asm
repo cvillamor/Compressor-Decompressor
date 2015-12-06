@@ -624,112 +624,112 @@ _get_out:
 ;
 ;--------------------------------------------------------     
 _encode:
-    mov si, offset message     
-    sub bp, bp   
-    sub cx, cx  
-    sub bx, bx
-    sub ax, ax  
+    mov  si, offset message     
+    sub  bp, bp   
+    sub  cx, cx  
+    sub  bx, bx
+    sub  ax, ax  
     ;Reset pointer
-    xor ax, ax
-    mov ah, 42h
-    mov al, 0
-    mov bx, open_h
-    mov dx, 0
-    int 21h        
-    jmp _encode_l
+    xor  ax, ax
+    mov  ah, 42h
+    mov  al, 0
+    mov  bx, open_h
+    mov  dx, 0
+    int  21h        
+    jmp  _encode_l
     
 	
 _open_file_err:
-    xor ax, ax
-    mov ah, 09h
-    mov dx, offset huffman_msg
-    int 21h
-    jmp exit
+    xor  ax, ax
+    mov  ah, 09h
+    mov  dx, offset huffman_msg
+    int  21h
+    jmp  exit
     
     
 _encode_l:        
-    xor ax, ax
-    mov ah, 3Fh
-    mov bx, open_h
-    mov cx, 1
-    mov dx, offset message_r
-    int 21h                   
-    jc  _open_file_err
-    cmp ax, cx                    ;EOF
-    jne _done_encode
-    mov ax, message_r     ;l and i
-    xor ah, ah
-    mov bx, 4
-    mul bx    
-    cmp ax, 0   
-    mov i , ax
-    mov cx, 0                    ;count
+    xor  ax, ax
+    mov  ah, 3Fh
+    mov  bx, open_h
+    mov  cx, 1
+    mov  dx, offset message_r
+    int  21h                   
+    jc   _open_file_err
+    cmp  ax, cx                    ;EOF
+    jne  _done_encode
+    mov  ax, message_r     ;l and i
+    xor  ah, ah
+    mov  bx, 4
+    mul  bx    
+    cmp  ax, 0   
+    mov  i , ax
+    mov  cx, 0                    ;count
     
 	
 _encode_inl:
-    xor dx, dx
-    mov dx, i   
-    mov ax, root
-    cmp dx, ax 
-    jae _encode_byte  
+    xor  dx, dx
+    mov  dx, i   
+    mov  ax, root
+    cmp  dx, ax 
+    jae  _encode_byte  
     ;move i into old i  
-    mov old_i, dx        
-    mov di, offset parent
-    mov bx, i
-    xor dx, dx
-    mov dx, [di+bx]
-    mov i , dx  
-    mov di, offset upkid
-    mov bx, i
-    mov ax, [di+bx] 
-    mov bx, old_i
-    cmp ax, bx
-    mov dx, encode_message_lnt   
-    jne _down_kid
+    mov  old_i, dx        
+    mov  di, offset parent
+    mov  bx, i
+    xor  dx, dx
+    mov  dx, [di+bx]
+    mov  i , dx  
+    mov  di, offset upkid
+    mov  bx, i
+    mov  ax, [di+bx] 
+    mov  bx, old_i
+    cmp  ax, bx
+    mov  dx, encode_message_lnt   
+    jne  _down_kid
     
     
 _up_kid:         
-    inc dx
-    mov encode_message_lnt, dx
+    inc  dx
+    mov  encode_message_lnt, dx
     push 1
-    jmp _encode_inl
+    jmp  _encode_inl
 
 	
 _down_kid:                           
-    inc dx
-    mov encode_message_lnt, dx
+    inc  dx
+    mov  encode_message_lnt, dx
     push 0
-    jmp _encode_inl
+    jmp  _encode_inl
     
 	
 _encode_byte: 
-    mov cx, encode_message_lnt
-    mov di, offset encode_message     
-    mov bx, encode_message_ptr    
+    mov  cx, encode_message_lnt
+    mov  di, offset encode_message     
+    mov  bx, encode_message_ptr    
     
 	
 _encode_byte_l:
-    pop ax                  
-    shr al, 1
-    rcl bits, 1
-    inc bitcount
-    cmp bitcount, 8
-    jnz _done_byte
+    pop  ax                  
+    shr  al, 1
+    rcl  bits, 1
+    inc  bitcount
+    cmp  bitcount, 8
+    jnz  _done_byte
     call _write_byte
-    mov bitcount, 0  
+    mov  bitcount, 0  
 	
 	
 _done_byte:
     ;mov byte ptr [di+bx], al
-    inc bx 
+    inc  bx 
     loop _encode_byte_l      
 
 
 _encode_byte_d:                
-    mov encode_message_lnt, 0
-    mov encode_message_ptr, bx
-    inc bp
-    jmp _encode_l
+    mov  encode_message_lnt, 0
+    mov  encode_message_ptr, bx
+    inc  bp
+    jmp  _encode_l
     
 	
 ;------------------WRITE BYTE----------------------------------
@@ -757,28 +757,28 @@ _write_byte:
 
 
 _done_encode: 
-    mov ax, bitcount
-    mov endbitcount, ax 
-    cmp bitcount, 0
-    jnz _pad_byte
-    jmp _close_prog
+    mov  ax, bitcount
+    mov  endbitcount, ax 
+    cmp  bitcount, 0
+    jnz  _pad_byte
+    jmp  _close_prog
 	
 	
 _pad_byte:
-    mov al, 1
-    shr al, 1
-    rcl bits, 1    
-    inc bitcount
-    cmp bitcount, 8
-    jnz _pad_byte
-    jmp _close_prog      
+    mov  al, 1
+    shr  al, 1
+    rcl  bits, 1    
+    inc  bitcount
+    cmp  bitcount, 8
+    jnz  _pad_byte
+    jmp  _close_prog      
     
 	
 _close_prog:
     call _write_byte  
-    xor ax, ax
-    mov al, byte ptr endbitCount
-    mov bits, al
+    xor  ax, ax
+    mov  al, byte ptr endbitCount
+    mov  bits, al
     call _write_byte  
     mov  ax, open_h
     mov  close_h, ax
@@ -786,7 +786,7 @@ _close_prog:
     mov  ax, out_h
     mov  close_h, ax
     call _close_file 
-    jmp exit
+    jmp  exit
      
 
 ;----------------CLOSE FILE----------------------------------
@@ -796,27 +796,26 @@ _close_file:
     push ax
     push cx
     push dx    
-    mov ah, 3eh
-    mov bx, close_h
-    int 21h       
-    jc  _close_file_error    
-    pop dx
-    pop cx
-    pop ax
+    mov  ah, 3eh
+    mov  bx, close_h
+    int  21h       
+    jc   _close_file_error    
+    pop  dx
+    pop  cx
+    pop  ax
     ret
 
 	
 _close_file_error:
-    pop dx
-    pop cx
-    pop ax
+    pop  dx
+    pop  cx
+    pop  ax
     ret       
 ;----------------CLOSE FILE----------------------------------
 ;
-;------------------------------------------------------------
+;------------------------------------------------------------    
     
-    
-    
+	
 ;------------------ENCODE--------------------------------
 ;Encode the bits
 ;
