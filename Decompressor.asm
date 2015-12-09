@@ -8,7 +8,6 @@ jmp start
     ;fileToEncode      db 'test2.txt',0 
     create       db 'testout.txt' 
       
-     
     fileToEncode db 256 dup(?)
     fileToDecode db 256 dup(?)
      
@@ -16,8 +15,7 @@ jmp start
     outH         dw ?    ;Create File Handle
     openH        dw ?    ;Open File Handle
     closeH       dw ?    ;Close File Handle
-
-                      
+                
     frequency    dw 1024   dup(0)
     upkid        dw 1024   dup(0)
     downkid      dw 1024   dup(0)
@@ -70,88 +68,82 @@ jmp start
     
 start:   
       
-    call ParseCommandFile
-    
-    call OpenFile
-                                 
-    call CreateFile
-     
-    call INITIALIZE 
-    
-    call TOTALFREQ 
-    call HUFFMAN_BODY                                             
-    call Decode
-    
-    jmp exit  
+    call _parse_command_file
+    call _open_file                                
+    call _create_file
+    call _initialize 
+    call _total_freq
+    call _huffman_body                                             
+    call _decode
+    jmp  _exit  
     
 ;----------------PARSING COMMAND LINE------------------------
 ;
 ;------------------------------------------------------------
   
-ParseCommandFile:
+_parse_command_file:
     push ax
     push bx
     push cx
     push dx 
     push si 
     push di
-    
-    mov si, 81h
-    mov di, offset fileToDecode 
-L1: 
-    xor ax, ax
-    mov al, byte ptr [si] 
-    inc si
-    cmp al, 0Dh
-    je errorParseFile
-    cmp al, 20h ;Space 
-    je L1  
+    mov  si, 81h
+    mov  di, offset fileToDecode 
+	
+	
+_li: 
+    xor  ax, ax
+    mov  al, byte ptr [si] 
+    inc  si
+    cmp  al, 0dh
+    je   _error_parse_file
+    cmp  al, 20h ;Space 
+    je   _l1  
 
-L2:                                         ;Input file                
-    mov byte ptr [di], al
-    inc di                                                             
-    mov al, byte ptr [si]                                              
-    inc si
-    cmp al, 0dh  
-    je errorParseFile
-    cmp al, 20h 
-    jne L2
-    
-    inc di
-    mov byte ptr [di], 0                    ;Null terminated string
-    mov di, offset fileToEncode   
+	
+_l2:                                         ;Input file                
+    mov  byte ptr [di], al
+    inc  di                                                             
+    mov  al, byte ptr [si]                                              
+    inc  si
+    cmp  al, 0dh  
+    je   _error_parse_file
+    cmp  al, 20h 
+    jne  _l2    
+    inc  di
+    mov  byte ptr [di], 0                    ;Null terminated string
+    mov  di, offset fileToEncode   
      
     
-L3:
-    mov al, byte ptr [si]
-    inc si 
-    cmp al, 0dh
-    je  endParse
-    mov byte ptr [di], al
-    inc di      
-    jmp L3
+_l3:
+    mov  al, byte ptr [si]
+    inc  si 
+    cmp  al, 0dh
+    je   _end_parse
+    mov  byte ptr [di], al
+    inc  di      
+    jmp  _l3
     
     
-endParse:  
-    inc di
-    mov byte ptr [di], 0 
-       
-    pop di   
-    pop si
-    pop dx
-    pop cx
-    pop bx
-    pop ax
+_end_parse:  
+    inc  di
+    mov  byte ptr [di], 0 
+    pop  di   
+    pop  si
+    pop  dx
+    pop  cx
+    pop  bx
+    pop  ax
     ret   
- 
-errorParseFile:  
-    xor ax, ax
-    mov ah, 9h
-    mov dx, offset ParseMessageError
-    int 21h
-    jmp exit
 
-
+	
+_error_parse_file:  
+    xor  ax, ax
+    mov  ah, 9h
+    mov  dx, offset ParseMessageError
+    int  21h
+    jmp  exit
 ;----------------PARSING COMMAND LINE------------------------
 ;
 ;------------------------------------------------------------
@@ -160,87 +152,76 @@ errorParseFile:
 ;----------------OPEN FILE-----------------------------------
 ;
 ;------------------------------------------------------------
-OpenFile:
-
+_open_file:
     push ax
     push cx
     push dx
-    
-    mov ah, 3Dh
-    mov al, 0h
-    mov dx, offset fileToDecode
-    sub cx, cx
-    int 21h
-    jc  OpenFileError
-    mov openH, ax 
-    
-    pop ax
-    pop cx
-    pop dx
+    mov  ah, 3dh
+    mov  al, 0h
+    mov  dx, offset fileToDecode
+    sub  cx, cx
+    int  21h
+    jc   _open_file_error
+    mov  openH, ax 
+    pop  ax
+    pop  cx
+    pop  dx
     ret
 
-OpenFileError:
-    pop dx
-    pop cx
-    pop ax 
-    ret   
-                                               
+	
+_open_file_error:
+    pop  dx
+    pop  cx
+    pop  ax 
+    ret                                 
 ;----------------OPEN FILE-----------------------------------
 ;
 ;------------------------------------------------------------
        
-     
-     
-                         
+                    
 ;------------------CREATE FILE---------------------------------
 ;
 ;--------------------------------------------------------------    
-CreateFile: 
-    
+_create_file: 
     push ax
     push cx
     push dx
-    
-    mov ah, 3ch
-    sub cx, cx
-    mov dx, offset fileToEncode
-    int 21h
-    jc  CreateFileError
-    mov outh, ax
-    
-    pop ax
-    pop cx
-    pop dx
+    mov  ah, 3ch
+    sub  cx, cx
+    mov  dx, offset fileToEncode
+    int  21h
+    jc   _create_file_error
+    mov  outh, ax    
+    pop  ax
+    pop  cx
+    pop  dx
     ret
 
-CreateFileError:  
-    xor ax, ax   
-    xor dx, dx
-    mov ah, 9h
-    mov dx, offset CreateFileMsgError
-    int 21h
-    jmp exit
-
-
+_create_file_error:  
+    xor  ax, ax   
+    xor  dx, dx
+    mov  ah, 9h
+    mov  dx, offset CreateFileMsgError
+    int  21h
+    jmp  exit
 ;------------------CREATE FILE---------------------------------
 ;
 ;--------------------------------------------------------------
 
+
 ;------------------WRITE TABLE----------------------------------
 ;
 ;--------------------------------------------------------------  
-WRITETABLE:             
+_write_table:             
     push ax
     push cx
     push dx
     push bx
-    
     mov  ah, 40h
     mov  bx, outh  
     mov  cx, 2048
     mov  dx, offset frequency
     int  21h
-    
     pop  bx
     pop  dx
     pop  cx
@@ -251,30 +232,25 @@ WRITETABLE:
 ;--------------------------------------------------------------  
        
 
-
-
 ;------------------INITIALIZE FREQUENCY TABLE------------------    
 ;This method initializes the frequency table. Counts the 
 ;presence of each symbol encountered.
 ;--------------------------------------------------------------
-INITIALIZE:        
+_initialize:        
     push bx
     push di
     push bp
     push ax
     push dx 
     push si
-    
-    mov  di,     offset frequency	;Set di to the position of frequency 
+    mov  di, offset frequency	;Set di to the position of frequency 
     ;mov  si,     offset mincount	;Set si to the position of mincount        
-     
-    xor  ax, 	 ax			                ;0 out ax register
-    mov  ah,     3Fh			            ;Instruction to read file
-    mov  bx, 	 openH		  	            ;Give it the file to be read file handle
-    mov  cx, 	 2048   	                ;cx = 1 number of bytes to be read
-    mov  dx,     di     	        ;Store result in messageR
+    xor  ax, ax			                ;0 out ax register
+    mov  ah, 3fh			            ;Instruction to read file
+    mov  bx, openH		  	            ;Give it the file to be read file handle
+    mov  cx, 2048   	                ;cx = 1 number of bytes to be read
+    mov  dx, di     	        ;Store result in messageR
     int  21h
-    
     pop  si
     pop  dx
     pop  ax
@@ -292,45 +268,39 @@ INITIALIZE:
 ;Goes through the list and finds the TOTAL FREQUENCY
 ; MAXES OUT AT AROUND 4294967296 BYTES OR 4 MB
 ;-------------------------------------------------------------- 
-TOTALFREQ:    
+_total_freq:    
     push ax
     push bx
     push si
     push di
-    push cx 
-                    
-    
-    mov  si, 	 offset frequency       ;Set si to the position of frequency
-    mov  di,     offset total           ;Set di to the position of total 
-    mov  cx,     256                   	;Size of the frequency table
+    push cx               
+    mov  si, offset frequency       ;Set si to the position of frequency
+    mov  di, offset total           ;Set di to the position of total 
+    mov  cx, 256                   	;Size of the frequency table
 
     
-TFL: 
+_tfl: 
     					;This sets the first Word of the 4 byte word
-    mov  ax, 	 word ptr total 	;Set ax to value of total
-    mov  bx,	 word ptr [si]    	;Set bx to value of SI
-    add  ax,     bx  	
-    mov  total,  ax            		;Add them together    
-    
-    
-    jnc  LTHAN65535C			;Carry has been detected 
-    inc  word ptr [di+2]	        ;increment whatever is in total by 1
+    mov   ax, word ptr total 	;Set ax to value of total
+    mov   bx, word ptr [si]    	;Set bx to value of SI
+    add   ax, bx  	
+    mov   total, ax            		;Add them together    
+    jnc   _l_than_65535_c			;Carry has been detected 
+    inc   word ptr [di+2]	        ;increment whatever is in total by 1
 
-LTHAN65535C:                                        					
-    mov  ax, 	 word ptr [di+2]	;Set ax to the value of whatever is in total
-    mov  bx, 	 word ptr [si+2]   	;Set bx to the value of whatever is in second word in frequency table
-    add  ax, 	 bx
-    mov  [di+2], ax     
-    
-    
-    add  si,	 4                     	;Increment si by 4...frequency table is spaced by double words
-    loop TFL       
-    
-    pop  cx 
-    pop  di
-    pop  si
-    pop  bx
-    pop  ax  
+	
+_l_than_65535_c:                                        					
+    mov   ax, word ptr [di+2]	;Set ax to the value of whatever is in total
+    mov   bx, word ptr [si+2]   	;Set bx to the value of whatever is in second word in frequency table
+    add   ax, bx
+    mov   [di+2], ax     
+    add   si, 4                     	;Increment si by 4...frequency table is spaced by double words
+    loop  _tfl       
+    pop   cx 
+    pop   di
+    pop   si
+    pop   bx
+    pop   ax  
     ret                                                                                    
 ;------------------END COUNT TOTAL FREQUENCY--------------------
 ;Goes through the list and finds the TOTAL FREQUENCY
@@ -338,147 +308,123 @@ LTHAN65535C:
 ;---------------------------------------------------------------    
                                                                     
                                                                     
-
-
 ;------------------HUFFMAN BODY--------------------------------
 ;This is the main body for the Huffman Function
 ;
 ;-------------------------------------------------------------- 
-HUFFMAN_BODY: 
-
-    
-    
+_huffman_body:
     push ax
     push bx
     push cx
     push dx
     push si
-    push di    
-    
-    
-    sub  bx,     bx       
-    
-    mov  si,     offset total                                                            
-    mov  di,     offset mincount
-
-    mov  bx,     word ptr [si]                   ;Set mincount equal to total
+    push di        
+    sub  bx, bx       
+    mov  si, offset total                                                            
+    mov  di, offset mincount
+    mov  bx, word ptr [si]                   ;Set mincount equal to total
     mov  word ptr [di],   bx                   
-    mov  bx, 	 word ptr [si+2]
-    mov  word ptr [di+2], bx  
-    
+    mov  bx, word ptr [si+2]
+    mov  word ptr [di+2], bx      
                 
 
-HUFFOUTLOOP:   
-                            
-    
-    
-    sub  bx, 	 bx
-    mov  si, 	 offset mincount
-    mov  di, 	 offset min_count_t
-     
-    mov  bx, 	 word ptr [si]			 ;Set value of min_count_temp = min_count
+_huffout_loop:              
+    sub  bx, bx
+    mov  si, offset mincount
+    mov  di, offset min_count_t
+    mov  bx, word ptr [si]			 ;Set value of min_count_temp = min_count
     mov  word ptr [di],bx  
-    mov  bx, 	 word ptr [si+2]
+    mov  bx, word ptr [si+2]
     mov  word ptr [di+2], bx
-    
-    mov  si, 	 offset value_min_p1		 ;Set value of value_min_p1 = 0
+    mov  si, offset value_min_p1		 ;Set value of value_min_p1 = 0
     mov  word ptr [si], 0
     mov  word ptr [si+2], 0
-
-    mov  si, 	 offset value_min_p2		 ;Set value of value_min_p2 = 0
+    mov  si, offset value_min_p2		 ;Set value of value_min_p2 = 0
     mov  word ptr [si], 0       
     mov  word ptr [si+2], 0 
       
-    ;----------FIND MIN POS 1 ROUTINE------------------------
-    ;Find the position of the first minimum and it's value
-    ;-------------------------------------------------------- 
-    xor  dx,	 dx
-    xor  cx,	 cx
-    mov  ax,	 root
-    mov  bx,	 4
+    
+;----------FIND MIN POS 1 ROUTINE------------------------
+;Find the position of the first minimum and it's value
+;-------------------------------------------------------- 
+    xor  dx, dx
+    xor  cx, cx
+    mov  ax, root
+    mov  bx, 4
     div  bx
-    mov  cx,	 ax		                 ;Loop condition. Root/4. Starts at 256 
+    mov  cx, ax		                 ;Loop condition. Root/4. Starts at 256 
+    xor  si, si
+    mov  si, offset frequency  		 ;si = frequency[pos]  
+    mov  di, offset min_count_t  		 ;di = min_count_t pos 
+    xor  ax, ax
 
-    xor  si,	 si
-    mov  si, 	 offset frequency  		 ;si = frequency[pos]  
-    mov  di,     offset min_count_t  		 ;di = min_count_t pos 
-    xor  ax,     ax
+	
+_min_pos_1:     
+    sub  bx, bx   				 ;word_segment = min_count_t (1st 2 bytes)
+    mov  bp, ax       
+    mov  bx, word ptr [di+2]
+    mov  word_segment, bx			    
+    mov  bx, word ptr [di] 			 ;word_offset  = min_count_t (2nd 2 bytes)
+    mov  word_offset,  bx  
+    mov  dx, word ptr [si+bp+2]		                  
+    cmp  dx, 0
+    jz   _c1		 ;frequency[pos+2] == 0 check frequency[pos] (1st 2 bytes)
+    cmp  dx, word_segment
+    jb 	 _huff_c1					 ;frequency[pos+2] <  min_count_t (1st 2 bytes) Change min_count values
+    cmp  dx, word_segment
+    ja   _c2					 ;frequency[pos+2] >  min_count_t (1st 2 bytes) Loop again       
+    
+	
+_c1:
+    mov  dx, word ptr [si+bp]		                 
+    cmp  dx, 0				 
+    jz   _c2           				 ;frequency[pos] == 0 check frequency[pos] (2nd 2 bytes) Loop again  
+    cmp  dx, word_offset
+    jb   _huff_c1					 ;frequency[pos] <  min_count_t (2nd 2 bytes) Change min_count values
 
-MINPOS1:     
-    
-    sub  bx, 	 bx   				 ;word_segment = min_count_t (1st 2 bytes)
-    mov  bp,	 ax       
-    mov  bx, 	 word ptr [di+2]
-    mov  word_segment, bx			 
-    
-    mov  bx, 	 word ptr [di] 			 ;word_offset  = min_count_t (2nd 2 bytes)
-    mov  word_offset,  bx 
- 
-    mov  dx, 	 word ptr [si+bp+2]		                  
-    cmp  dx, 	 0
-    jz   C1					 ;frequency[pos+2] == 0 check frequency[pos] (1st 2 bytes)
-    cmp  dx, 	 word_segment
-    jb 	 HUFFC1					 ;frequency[pos+2] <  min_count_t (1st 2 bytes) Change min_count values
-    cmp  dx,	 word_segment
-    ja   C2					 ;frequency[pos+2] >  min_count_t (1st 2 bytes) Loop again       
-    
-C1:
-    mov  dx, 	 word ptr [si+bp]		                 
-    cmp  dx, 	 0				 
-    jz   C2           				 ;frequency[pos] == 0 check frequency[pos] (2nd 2 bytes) Loop again  
-    cmp  dx,	 word_offset
-    jb   HUFFC1					 ;frequency[pos] <  min_count_t (2nd 2 bytes) Change min_count values
-
-C2:
-    add  ax, 	 4
-    LOOP MINPOS1 
-    jmp  DMIN1    
+_c2:
+    add  ax, 4
+    loop _min_pos_1 
+    jmp  _d_min_1    
       
-HUFFC1:    
-    
-    mov  dx, 	 word ptr [si+bp]		 ;min_count_t 2nd bytes = frequency[pos]
-    mov  word ptr [di], 	 dx   
-    
-    mov  dx,	 word ptr [si+bp+2]  		 ;min_count_t 1st bytes = frequency[pos+2]		
+	  
+_huff_c1:    
+    mov  dx, word ptr [si+bp]		 ;min_count_t 2nd bytes = frequency[pos]
+    mov  word ptr [di], dx   
+    mov  dx, word ptr [si+bp+2]  		 ;min_count_t 1st bytes = frequency[pos+2]		
     mov  word ptr [di+2], dx
-    
     mov  min_pos1, ax     
     add  ax, 	 4
-    LOOP MINPOS1 
-    ;----------FIND MIN POS 1 ROUTINE------------------------
-    ;Loop Back
-    ;--------------------------------------------------------
+    loop _min_pos_1 
+;----------FIND MIN POS 1 ROUTINE------------------------
+;Loop Back
+;--------------------------------------------------------
 
 
-DMIN1:    
-    
-    mov  di,     offset value_min_p1    					
-    sub  bp, 	 bp 				 ;Position of the first minimal                
-    mov  bp, 	 min_pos1    
-    sub  ax, 	 ax            
-                     
-    mov  ax, 	 word ptr [si+bp] 			 ;Value_min_p1 = frequency[pos]         
+_d_min_1:    
+    mov  di, offset value_min_p1    					
+    sub  bp, bp 				 ;Position of the first minimal                
+    mov  bp, min_pos1    
+    sub  ax, ax                    
+    mov  ax, word ptr [si+bp] 			 ;Value_min_p1 = frequency[pos]         
     mov  word ptr [di], ax
-    mov  ax, 	 word ptr [si+bp+2]          
+    mov  ax, word ptr [si+bp+2]          
     mov  word ptr [di+2], ax    
-        
-    mov word ptr [si+bp], 0			 ;Clear the Values at frequency[min_pos1]
-    mov word ptr [si+bp+2], 0
+    mov  word ptr [si+bp], 0			 ;Clear the Values at frequency[min_pos1]
+    mov  word ptr [si+bp+2], 0
+    mov  di, offset mincount                     
+    mov  bx, word ptr [di]			 ;Set value of min_count_temp = min_count
+    mov  di, offset min_count_t
+    mov  word ptr [di],bx 
+    mov  di, offset mincount
+    mov  bx, word ptr [di + 2]
+    mov  di, offset min_count_t
+    mov  word ptr [di+2], bx                   
 
-    mov di, 	 offset mincount                     
-    mov bx, 	 word ptr [di]			 ;Set value of min_count_temp = min_count
-    mov di,      offset min_count_t
-    mov word ptr [di],bx 
 
-    mov di,	 offset mincount
-    mov bx, 	 word ptr [di + 2]
-    mov di,	 offset min_count_t
-    mov word ptr [di+2], bx               
-    
-    
-    ;----------FIND MIN POS 2 ROUTINE------------------------
-    ;Find the position of the second minimum and it's value
-    ;--------------------------------------------------------   
+;----------FIND MIN POS 2 ROUTINE------------------------
+;Find the position of the second minimum and it's value
+;--------------------------------------------------------   
     
     xor  dx,	 dx
     xor  cx,	 cx
